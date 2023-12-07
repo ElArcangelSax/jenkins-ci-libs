@@ -1,0 +1,37 @@
+pipeline
+{
+    options
+    {
+        ansiColor('xterm')
+    }
+    agent any
+    stages
+    {
+        stage('Preparation: Loading environment')
+        {
+            steps
+            {
+                script
+                {
+                    //
+                    load_env("${envfile}")
+                    pull_ci()
+                    //
+                    withCredentials([string(credentialsId: "${gitcryp_ci}", variable: 'AUTH')])
+                    {
+                        sh 'echo $AUTH | base64 -d > $WORKSPACE/$gitcryp_ci'
+                    }
+                    //
+                    withCredentials([usernamePassword(credentialsId: 'bitbucket', usernameVariable: 'username', passwordVariable: 'password' )])
+                    {
+                        sh '''
+                            echo "Actulizando repo ci-libs en local"
+                            chmod -R 777 cicd/git.sh
+                            ./cicd/git.sh $username $password ci-libs
+                        '''
+                    }
+                }
+            }
+        }
+    }
+}
